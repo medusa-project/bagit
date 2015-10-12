@@ -28,7 +28,17 @@ module BagIt
 
       # manifest each tag file for each algorithm
       bag_files.each do |f|
-        rel_path = Pathname.new(f).relative_path_from(Pathname.new(bag_dir)).to_s
+        #hack to correct for Pathname#relative_path_from but in jruby-9.0.0.0
+        #or 9.0.1.0. Shows when there is a '!' in the path.
+        begin
+          rel_path = Pathname.new(f).relative_path_from(Pathname.new(bag_dir)).to_s
+        rescue Exception => e
+          if f.starts_with?(bag_dir)
+            rel_path = f.sub(/^#{bag_dir}/, '').to_s
+          else
+            raise
+          end
+        end
 
         # sha1
         sha1 = Digest::SHA1.file f
